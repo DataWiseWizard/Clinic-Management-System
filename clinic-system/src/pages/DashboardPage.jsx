@@ -1,6 +1,7 @@
 import { useAuth } from "../features/auth/AuthContext";
 import PatientForm from "../features/patients/PatientForm";
 import PatientList from "../features/patients/PatientList";
+import QueueList from "../features/queue/QueueList";
 
 export default function DashboardPage() {
   const { logout } = useAuth();
@@ -15,7 +16,8 @@ export default function DashboardPage() {
         <div className="md:col-span-1">
           <PatientForm onSuccess={() => window.location.reload()} />
         </div>
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 space-y-6">
+          <QueueList />
           <PatientList />
         </div>
       </main>
