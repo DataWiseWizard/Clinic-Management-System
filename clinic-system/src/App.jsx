@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './features/auth/AuthContext';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 
+
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
   if (!user) {
@@ -12,7 +13,6 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
-  const isAuthenticated = false;
   return (
     <AuthProvider>
       <BrowserRouter>
