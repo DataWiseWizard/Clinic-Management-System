@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { subscribeToBilling, processPayment } from "./billingService";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import { InvoicePDF } from "./InvoicePDF";
 
 export default function BillingList() {
     const [invoices, setInvoices] = useState([]);
@@ -24,7 +26,7 @@ export default function BillingList() {
             setLoading(false);
         }
     };
-    
+
     if (invoices.length === 0) return null;
 
     return (
@@ -44,6 +46,15 @@ export default function BillingList() {
                         </div>
                         <div className="flex items-center gap-3">
                             <span className="text-xl font-bold text-gray-800">${inv.billing.total}</span>
+                            <PDFDownloadLink
+                                document={<InvoicePDF invoice={inv} />}
+                                fileName={`invoice_${inv.patientName}.pdf`}
+                                className="text-blue-600 underline text-sm hover:text-blue-800"
+                            >
+                                {({ loading: pdfLoading }) =>
+                                    pdfLoading ? "Loading PDF..." : "Download Invoice"
+                                }
+                            </PDFDownloadLink>
                             <button
                                 onClick={() => handlePay(inv)}
                                 disabled={loading}

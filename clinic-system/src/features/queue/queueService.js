@@ -41,7 +41,9 @@ export const addToQueue = async (patientId, patientData) => {
                 tokenNumber: nextToken,
                 date: todayStr,
                 status: "waiting",
-                createdAt: serverTimestamp(),
+                timestamps: {
+                    created: serverTimestamp()
+                },
             });
 
             transaction.set(statsRef, {
