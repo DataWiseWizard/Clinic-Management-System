@@ -19,11 +19,15 @@ const generateKeywords = (name) => {
 export const addPatient = async (patientData) => {
   try {
     const patientsRef = collection(db, COLLECTION_NAME);
-    const q = query(patientsRef, where("contact", "==", patientData.contact));
-    const snapshot = await getDocs(q);
+    if (navigator.onLine) {
+      const q = query(patientsRef, where("contact", "==", patientData.contact));
+      const snapshot = await getDocs(q);
 
-    if (!snapshot.empty) {
-      throw new Error("Patient with this phone number already exists!");
+      if (!snapshot.empty) {
+        throw new Error("Patient with this phone number already exists!");
+      }
+    } else {
+      console.warn("Offline: Skipping duplicate check to allow local write.");
     }
     const newPatient = {
       ...patientData,
@@ -33,7 +37,7 @@ export const addPatient = async (patientData) => {
 
     const docRef = await addDoc(patientsRef, newPatient);
     return docRef.id;
-    
+
   } catch (error) {
     throw error;
   }
