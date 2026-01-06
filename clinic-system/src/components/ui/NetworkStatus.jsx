@@ -4,8 +4,14 @@ export default function NetworkStatus() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    const handleOnline = () => {
+      setIsOnline(true);
+      EnableNetwork(db);
+    }
+    const handleOffline = () => {
+      setIsOnline(false);
+      DisableNetwork(db);
+    }
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);

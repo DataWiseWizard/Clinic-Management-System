@@ -1,5 +1,5 @@
 import { db } from "../../lib/firebase";
-import { collection, addDoc, query, where, getDocs, Timestamp } from "firebase/firestore";
+import { collection, doc, setDoc, query, where, getDocs, Timestamp } from "firebase/firestore";
 
 const COLLECTION_NAME = "patients";
 
@@ -21,7 +21,14 @@ export const addPatient = async (patientData) => {
     const patientsRef = collection(db, COLLECTION_NAME);
     if (navigator.onLine) {
       const q = query(patientsRef, where("contact", "==", patientData.contact));
-      const snapshot = await getDocs(q);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Network Timeout")), 2000)
+      );
+
+      const snapshot = await Promise.race([
+        getDocs(q),
+        timeoutPromise
+      ]);
 
       if (!snapshot.empty) {
         throw new Error("Patient with this phone number already exists!");
@@ -31,6 +38,7 @@ export const addPatient = async (patientData) => {
     }
     const newPatient = {
       ...patientData,
+      id: newDocRef.id,
       createdAt: Timestamp.now(),
       searchKeywords: generateKeywords(patientData.fullName),
     };
@@ -38,8 +46,12 @@ export const addPatient = async (patientData) => {
     const docRef = await addDoc(patientsRef, newPatient);
     return docRef.id;
 
-  } catch (error) {
-    throw error;
+  } catch (err) {
+    if (err.message === "Write Timeout") {
+      console.log("ℹ️ Write timed out (Offline). Assuming success via cache.");
+    } else {
+      throw err;
+    }
   }
 };
 
