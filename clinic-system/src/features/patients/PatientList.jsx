@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { searchPatients } from "./patientService";
+import { searchPatients, deletePatient } from "./patientService";
 import { addToQueue } from "../queue/queueService";
 
-export default function PatientList() {
+export default function PatientList({ refreshTrigger }) {
   const [patients, setPatients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [processingId, setProcessingId] = useState(null);
@@ -14,7 +14,7 @@ export default function PatientList() {
 
   useEffect(() => {
     fetchPatients();
-  }, [searchTerm]);
+  }, [searchTerm, refreshTrigger]);
 
   const handleAddToQueue = async (patient) => {
     if (!confirm(`Add ${patient.fullName} to the queue?`)) return;
@@ -27,6 +27,17 @@ export default function PatientList() {
       alert("Error: " + error.message);
     } finally {
       setProcessingId(null);
+    }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!confirm(`Are you sure you want to delete ${name}? This cannot be undone.`)) return;
+
+    try {
+      await deletePatient(id);
+      fetchPatients(); // Refresh the list immediately
+    } catch (error) {
+      alert("Error deleting patient: " + error.message);
     }
   };
 
@@ -58,12 +69,18 @@ export default function PatientList() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{patient.fullName}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.contact}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
-                  <button 
+                  <button
                     onClick={() => handleAddToQueue(patient)}
                     disabled={processingId === patient.id}
                     className="hover:underline disabled:text-gray-400 font-semibold"
                   >
                     {processingId === patient.id ? "Adding..." : "Add to Queue"}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(patient.id, patient.fullName)}
+                    className="text-red-500 hover:text-red-700 hover:underline font-medium"
+                  >
+                    Delete
                   </button>
                 </td>
               </tr>

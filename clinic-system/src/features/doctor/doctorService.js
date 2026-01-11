@@ -29,7 +29,7 @@ export const getPatientHistory = async (patientId) => {
             console.log(`Checking Apt ${apt.id}: Status is '${apt.status}' -> Keep? ${isRelevant}`);
             return isRelevant;
         });
-        
+
         history.sort((a, b) => b.timestamps.created - a.timestamps.created);
         return history;
     } catch (error) {
@@ -40,19 +40,35 @@ export const getPatientHistory = async (patientId) => {
 
 export const startConsultation = async (appointmentId) => {
     const ref = doc(db, "appointments", appointmentId);
-    await updateDoc(ref, {
-        status: "in_consultation",
-        "timestamps.consultationStart": serverTimestamp()
-    });
+    try {
+        await Promise.race([
+            updateDoc(ref, {
+                status: "in_consultation",
+                "timestamps.consultationStart": serverTimestamp()
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Write Timeout")), 500))
+        ]);
+    } catch (err) {
+        if (err.message !== "Write Timeout") throw err;
+        console.log("Offline: Consultation started locally.");
+    }
 };
 
 export const finishConsultation = async (appointmentId, clinicalData, billingAmount) => {
     const ref = doc(db, "appointments", appointmentId);
-    await updateDoc(ref, {
-        status: "billing",
-        "timestamps.completed": serverTimestamp(),
-        clinicalData: clinicalData,
-        "billing.consultationFee": billingAmount,
-        "billing.paymentStatus": "pending"
-    });
+    try {
+        await Promise.race([
+            updateDoc(ref, {
+                status: "billing",
+                "timestamps.completed": serverTimestamp(),
+                clinicalData: clinicalData,
+                "billing.consultationFee": billingAmount,
+                "billing.paymentStatus": "pending"
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Write Timeout")), 500))
+        ]);
+    } catch (err) {
+        if (err.message !== "Write Timeout") throw err;
+        console.log("Offline: Consultation finished locally.");
+    }
 };

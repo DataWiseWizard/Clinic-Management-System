@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "../features/auth/AuthContext";
 import PatientForm from "../features/patients/PatientForm";
 import PatientList from "../features/patients/PatientList";
@@ -7,6 +8,7 @@ import BillingList from "../features/billing/BillingList";
 
 export default function DashboardPage() {
   const { logout } = useAuth();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -19,13 +21,13 @@ export default function DashboardPage() {
           <h2 className="text-xl font-bold text-gray-700 mb-4 px-1">Reception Desk</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-1">
-              <PatientForm onSuccess={() => window.location.reload()} />
+              <PatientForm onSuccess={() => setRefreshTrigger(prev => prev + 1)} />
             </div>
             <div className="md:col-span-2 flex flex-col gap-6">
               <BillingList />
               <QueueList />
               <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <PatientList />
+                <PatientList refreshTrigger={refreshTrigger} />
               </div>
             </div>
           </div>

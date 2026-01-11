@@ -6,6 +6,8 @@ import {
     serverTimestamp,
     query,
     where,
+    limit,
+    getDocs,
     orderBy,
     onSnapshot
 } from "firebase/firestore";
@@ -79,4 +81,23 @@ export const subscribeToQueue = (callback) => {
         }));
         callback(queue);
     });
+};
+
+export const getQueueHistory = async () => {
+  const todayStr = new Date().toISOString().split("T")[0];
+  const q = query(
+    collection(db, "appointments"),
+    where("date", "==", todayStr),
+    where("status", "==", "completed"),
+    orderBy("timestamps.completed", "desc"),
+    limit(10)
+  );
+
+  try {
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => doc.data());
+  } catch (error) {
+    console.warn("Analytics fetch failed:", error);
+    return [];
+  }
 };

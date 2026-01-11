@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
-import { subscribeToQueue } from "./queueService";
+import { subscribeToQueue, getQueueHistory } from "./queueService";
+import { calculateWaitTime } from "../../utils/analytics";
 
 export default function QueueList() {
     const [queue, setQueue] = useState([]);
+    const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        getQueueHistory().then(data => setHistory(data));
+    }, []);
 
     useEffect(() => {
         const unsubscribe = subscribeToQueue((data) => {
@@ -29,20 +35,25 @@ export default function QueueList() {
                 <p className="text-gray-500 text-center py-8">No patients in queue.</p>
             ) : (
                 <div className="space-y-3">
-                    {queue.map((apt) => (
-                        <div key={apt.id} className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded shadow-sm flex justify-between items-center">
-                            <div>
-                                <div className="text-2xl font-bold text-blue-700">Token #{apt.tokenNumber}</div>
-                                <div className="font-medium text-gray-900">{apt.patientName}</div>
-                                <div className="text-xs text-gray-500">Waiting since {apt.createdAt?.toDate().toLocaleTimeString()}</div>
+                    {queue.map((apt, index) => {
+                        const waitTime = calculateWaitTime(history, index);
+                        return (
+                            <div key={apt.id} className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded shadow-sm flex justify-between items-center">
+                                <div>
+                                    <div className="text-2xl font-bold text-blue-700">Token #{apt.tokenNumber}</div>
+                                    <div className="font-medium text-gray-900">{apt.patientName}</div>
+                                    <div className="text-xs text-blue-600 font-semibold mt-1 flex items-center gap-1">
+                                        <span>⏱️ Approx wait: {waitTime} mins</span>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <span className="inline-block px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
+                                        Waiting
+                                    </span>
+                                </div>
                             </div>
-                            <div className="text-right">
-                                <span className="inline-block px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">
-                                    Waiting
-                                </span>
-                            </div>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
             )}
         </div>
