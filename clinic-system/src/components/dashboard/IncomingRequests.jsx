@@ -15,12 +15,14 @@ const IncomingRequests = () => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
+        console.log("IncomingRequests: Setting up listener...");
         const q = query(
             collection(db, "appointments"),
             where("status", "==", "request")
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            console.log("IncomingRequests: Snapshot received!", snapshot.size, "docs");
             const pendingData = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
