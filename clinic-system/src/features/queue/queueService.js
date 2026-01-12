@@ -84,20 +84,27 @@ export const subscribeToQueue = (callback) => {
 };
 
 export const getQueueHistory = async () => {
-  const todayStr = new Date().toISOString().split("T")[0];
-  const q = query(
-    collection(db, "appointments"),
-    where("date", "==", todayStr),
-    where("status", "==", "completed"),
-    orderBy("timestamps.completed", "desc"),
-    limit(10)
-  );
+    const todayStr = new Date().toISOString().split("T")[0];
+    const q = query(
+        collection(db, "appointments"),
+        where("date", "==", todayStr),
+        where("status", "==", "completed")
+    );
 
-  try {
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => doc.data());
-  } catch (error) {
-    console.warn("Analytics fetch failed:", error);
-    return [];
-  }
+    try {
+        const snapshot = await getDocs(q);
+        const rawData = snapshot.docs.map(doc => doc.data());
+        console.log(`🔎 Analytics Found: ${rawData.length} completed patients`);
+        const sortedHistory = rawData.sort((a, b) => {
+            const timeA = a.timestamps?.completed?.toMillis() || 0;
+            const timeB = b.timestamps?.completed?.toMillis() || 0;
+            return timeB - timeA;
+        })
+
+        return sortedHistory.slice(0, 10);
+
+    } catch (error) {
+        console.warn("Analytics fetch failed:", error);
+        return [];
+    }
 };

@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { searchPatients, deletePatient } from "./patientService";
 import { addToQueue } from "../queue/queueService";
+import { useNotifications } from "../notifications/NotificationContext";
 
 export default function PatientList({ refreshTrigger }) {
   const [patients, setPatients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [processingId, setProcessingId] = useState(null);
+  const { addNotification } = useNotifications();
 
   const fetchPatients = async () => {
     const data = await searchPatients(searchTerm);
@@ -22,7 +24,10 @@ export default function PatientList({ refreshTrigger }) {
     setProcessingId(patient.id);
     try {
       await addToQueue(patient.id, patient);
-      alert(`Token generated for ${patient.fullName}`);
+      addNotification(
+        "Queue Update",
+        `${patient.fullName} added to queue. Token generated.`
+      );
     } catch (error) {
       alert("Error: " + error.message);
     } finally {

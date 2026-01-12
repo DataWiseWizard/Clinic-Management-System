@@ -10,16 +10,20 @@ export const calculateWaitTime = (history, queuePosition) => {
         return (queuePosition + 1) * 15;
     }
 
-    const recentVisits = history.slice(0, 5);
+    const durations = history
+        .map(apt => {
+            const start = apt.timestamps?.consultationStart?.toMillis ? apt.timestamps.consultationStart.toMillis() : 0;
+            const end = apt.timestamps?.completed?.toMillis ? apt.timestamps.completed.toMillis() : 0;
 
-    const durations = recentVisits.map(apt => {
-        if (!apt.timestamps?.consultationStart || !apt.timestamps?.completed) return 15;
+            if (start === 0 || end === 0 || end < start) return null;
 
-        const start = apt.timestamps.consultationStart.toMillis();
-        const end = apt.timestamps.completed.toMillis();
-        return (end - start) / 60000;
-    });
+            return (end - start) / 60000;
+        })
+        .filter(mins => mins !== null && mins > 0)
 
+    if (durations.length === 0) {
+        return (queuePosition + 1) * 15;
+    }
     const totalMinutes = durations.reduce((sum, val) => sum + val, 0);
     const avgMinutes = Math.ceil(totalMinutes / durations.length);
 
