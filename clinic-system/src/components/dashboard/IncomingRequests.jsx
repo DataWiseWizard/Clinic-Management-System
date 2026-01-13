@@ -59,8 +59,6 @@ const IncomingRequests = () => {
                     approvedAt: new Date()
                 });
             });
-
-            console.log(`Approved ${request.patientName} with Token ${newTokenNumber}`);
         } catch (error) {
             console.error("Transaction failed: ", error);
             alert("Error approving patient. Please try again.");
