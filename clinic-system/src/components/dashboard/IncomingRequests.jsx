@@ -6,11 +6,14 @@ import {
     onSnapshot,
     runTransaction,
     doc,
-    deleteDoc
+    deleteDoc,
+    getDocs,
+    addDoc,
+    serverTimestamp
 } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 
-const IncomingRequests = () => {
+const IncomingRequests = ({ onSuccess}) => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -33,11 +36,42 @@ const IncomingRequests = () => {
         return () => unsubscribe();
     }, []);
 
+    const generateKeywords = (name) => {
+        const words = name.toLowerCase().split(" ");
+        const keywords = [];
+        words.forEach(word => {
+            let temp = "";
+            for (const char of word) {
+                temp += char;
+                keywords.push(temp);
+            }
+        });
+        return keywords;
+    };
+
     const handleApprove = async (request) => {
         if (loading) return;
         setLoading(true);
 
         try {
+            const patientsRef = collection(db, "patients");
+            const patientQuery = query(patientsRef, where("contact", "==", request.patientPhone));
+            const patientSnapshot = await getDocs(patientQuery);
+
+            if (patientSnapshot.empty) {
+                await addDoc(patientsRef, {
+                    fullName: request.patientName,
+                    contact: request.patientPhone,
+                    createdAt: serverTimestamp(),
+                    searchKeywords: generateKeywords(request.patientName),
+                    medicalHistory: [],
+                    lastVisit: new Date()
+                });
+                console.log("🆕 New Patient Record Created!");
+                if (onSuccess) onSuccess();
+            }
+
+
             await runTransaction(db, async (transaction) => {
                 const todayStr = new Date().toISOString().split('T')[0];
                 const statsRef = doc(db, "stats", todayStr);

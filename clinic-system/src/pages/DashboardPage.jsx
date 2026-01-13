@@ -29,7 +29,7 @@ export default function DashboardPage() {
           <h2 className="text-xl font-bold text-gray-700 mb-4 px-1">Reception Desk</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-1">
-              <IncomingRequests />
+              <IncomingRequests onSuccess={() => setRefreshTrigger(prev => prev + 1)}/>
               <PatientForm onSuccess={() => setRefreshTrigger(prev => prev + 1)} />
             </div>
             <div className="md:col-span-2 flex flex-col gap-6">
