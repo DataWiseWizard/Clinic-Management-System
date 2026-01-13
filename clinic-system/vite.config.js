@@ -25,11 +25,36 @@ export default defineConfig({
           sizes: '512x512',
           type: 'image/png'
         }
-      ]
+      ],
+      workbox: {
+        maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+      }
     }
   })
   ],
   define: {
     global: 'window',
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('firebase')) {
+              return 'firebase-vendor';
+            }
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'react-vendor';
+            }
+            if (id.includes('@react-pdf')) {
+              return 'pdf-vendor';
+            }
+            return 'vendor';
+          }
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
+  }
 })
