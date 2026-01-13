@@ -18,14 +18,12 @@ const IncomingRequests = ({ onSuccess}) => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        console.log("IncomingRequests: Setting up listener...");
         const q = query(
             collection(db, "appointments"),
             where("status", "==", "request")
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            console.log("IncomingRequests: Snapshot received!", snapshot.size, "docs");
             const pendingData = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -67,7 +65,6 @@ const IncomingRequests = ({ onSuccess}) => {
                     medicalHistory: [],
                     lastVisit: new Date()
                 });
-                console.log("🆕 New Patient Record Created!");
                 if (onSuccess) onSuccess();
             }
 

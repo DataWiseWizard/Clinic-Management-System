@@ -6,7 +6,6 @@ import {
     serverTimestamp,
     query,
     where,
-    limit,
     getDocs,
     orderBy,
     onSnapshot
@@ -94,7 +93,6 @@ export const getQueueHistory = async () => {
     try {
         const snapshot = await getDocs(q);
         const rawData = snapshot.docs.map(doc => doc.data());
-        console.log(`🔎 Analytics Found: ${rawData.length} completed patients`);
         const sortedHistory = rawData.sort((a, b) => {
             const timeA = a.timestamps?.completed?.toMillis() || 0;
             const timeB = b.timestamps?.completed?.toMillis() || 0;
