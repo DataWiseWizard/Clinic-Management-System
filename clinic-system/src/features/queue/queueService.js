@@ -20,7 +20,7 @@ const getTodayStr = () => new Date().toISOString().split("T")[0];
  */
 export const addToQueue = async (patientId, patientData) => {
     const todayStr = getTodayStr();
-    const statsRef = doc(db, "daily_stats", todayStr);
+    const statsRef = doc(db, "stats", todayStr);
     const appointmentsRef = collection(db, "appointments");
 
     try {
