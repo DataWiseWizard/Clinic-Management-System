@@ -27,7 +27,7 @@ export default defineConfig({
         }
       ],
       workbox: {
-        maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,ico,png,svg}']
       }
     }
@@ -36,30 +36,18 @@ export default defineConfig({
   define: {
     global: 'window',
   },
-  resolve: {
-    alias: {
-      '@react-pdf/renderer': '@react-pdf/renderer/lib/react-pdf.browser.es.js',
-    },
-  },
   build: {
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('firebase')) {
-              return 'firebase-vendor';
-            }
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'react-vendor';
-            }
-            if (id.includes('@react-pdf')) {
-              return 'pdf-vendor';
-            }
+            if (id.includes('firebase')) return 'firebase';
+            if (id.includes('@react-pdf') || id.includes('react-pdf')) return 'pdf-renderer';
             return 'vendor';
           }
         }
       }
     },
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1500
   }
 })
