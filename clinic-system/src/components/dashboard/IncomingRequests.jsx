@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import { db } from "../../lib/firebase";
-import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, runTransaction } from "firebase/firestore";
+import {
+    collection,
+    query,
+    where,
+    onSnapshot,
+    doc,
+    updateDoc,
+    addDoc,
+    serverTimestamp
+} from "firebase/firestore";
 import { addToQueue } from "../../features/queue/queueService";
 import { FaUserClock, FaCheck, FaTimes } from "react-icons/fa";
 
@@ -17,29 +26,39 @@ export default function IncomingRequests() {
     }, []);
 
     const handleApprove = async (req) => {
+        console.log("Starting approval for:", req);
         setProcessing(req.id);
-        try {
-            await runTransaction(db, async (req) => {
-                const patientRef = doc(collection(db, "patients"),
-                    {
-                        fullName: req.fullName,
-                        contact: req.contact,
-                        createdAt: serverTimestamp()
-                    });
-                const queueItem = await addToQueue(patientRef.id, {
-                    fullName: req.fullName,
-                    purpose: req.purpose
-                });
 
-                const reqRef = doc(db, "incoming_requests", req.id);
-                await updateDoc(reqRef, {
-                    status: "approved",
-                    token: queueItem.token,
-                    queueId: queueItem.id,
-                    patientId: patientRef.id
-                });
+        try {
+            console.log("Step 1: Creating Patient Record...");
+            const patientRef = await addDoc(collection(db, "patients"), {
+                fullName: req.fullName,
+                contact: req.contact,
+                createdAt: serverTimestamp()
             });
+            console.log("Patient Created. ID:", patientRef.id);
+            console.log("Step 2: Adding to Queue...");
+            const queueItem = await addToQueue(patientRef.id, {
+                fullName: req.fullName,
+                purpose: req.purpose
+            });
+
+            if (!queueItem || !queueItem.token) {
+                throw new Error("Queue Service did not return a token!");
+            }
+            console.log("Queue Item Created. Token:", queueItem.token);
+            console.log("Step 3: Updating Request Status...");
+
+            const reqRef = doc(db, "incoming_requests", req.id);
+            await updateDoc(reqRef, {
+                status: "approved",
+                token: queueItem.token,
+                queueId: queueItem.id,
+                patientId: patientRef.id
+            });
+            console.log("Success! Request Approved.");
         } catch (error) {
+            console.error("APPROVAL FAILED:", error);
             alert("Approval Failed: " + error.message);
         } finally {
             setProcessing(null);
@@ -51,7 +70,14 @@ export default function IncomingRequests() {
         await updateDoc(doc(db, "incoming_requests", id), { status: "rejected" });
     };
 
-    if (requests.length === 0) return null;
+    if (requests.length === 0) {
+        return (
+            <div className="bg-white rounded-xl p-4 mb-6 border border-dashed border-gray-300 text-center text-gray-400 text-sm">
+                <FaUserClock className="mx-auto mb-2 text-gray-300" />
+                No incoming kiosk requests
+            </div>
+        );
+    }
 
     return (
         <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-xl p-1 shadow-lg mb-6">

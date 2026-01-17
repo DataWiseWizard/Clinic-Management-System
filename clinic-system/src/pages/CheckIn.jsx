@@ -19,7 +19,7 @@ export default function CheckIn() {
     if (!requestId) return;
 
     const unsub = onSnapshot(doc(db, "incoming_requests", requestId), (docSnap) => {
-      if (doc.exists()) {
+      if (docSnap.exists()) {
         const data = docSnap.data();
         if (data.status === "approved" && data.queueId) {
           setStatus("approved");
