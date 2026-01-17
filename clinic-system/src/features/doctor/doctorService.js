@@ -11,7 +11,6 @@ import {
 } from "firebase/firestore";
 
 export const getPatientHistory = async (patientId) => {
-    console.log("🔍 Fetching history for Patient ID:", patientId);
     try {
         const q = query(
             collection(db, "appointments"),
@@ -20,16 +19,13 @@ export const getPatientHistory = async (patientId) => {
         );
 
         const snapshot = await getDocs(q);
-        console.log("📄 Raw Documents Found:", snapshot.docs.length);
         const rawData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        console.log("📦 Raw Data:", rawData);
 
         const history = rawData.filter(apt => {
             const isRelevant = apt.status === "completed" || apt.status === "billing";
             console.log(`Checking Apt ${apt.id}: Status is '${apt.status}' -> Keep? ${isRelevant}`);
             return isRelevant;
         });
-
         history.sort((a, b) => b.timestamps.created - a.timestamps.created);
         return history;
     } catch (error) {

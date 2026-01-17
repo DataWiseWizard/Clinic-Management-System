@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { auth } from "../../lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../../lib/firebase";
 
 const AuthContext = createContext();
 
@@ -9,8 +10,27 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser) {
+                try {
+                    const userDocRef = doc(db, "users", currentUser.uid);
+                    const userSnapshot = await getDoc(userDocRef);
+
+                    if (userSnapshot.exists()) {
+                        const userData = userSnapshot.data();
+                        setUser({ ...currentUser, role: userData.role });
+                        console.log("User logged in as:", userData.role);
+                    } else {
+                        console.warn("User logged in, but no role found in Firestore!");
+                        setUser(currentUser);
+                    }
+                } catch (error) {
+                    console.error("Error fetching user role:", error);
+                    setUser(currentUser);
+                }
+            } else {
+                setUser(null);
+            }
             setLoading(false);
         });
         return () => unsubscribe();
@@ -34,5 +54,5 @@ export function AuthProvider({ children }) {
 }
 
 export const useAuth = () => {
-  return useContext(AuthContext);
+    return useContext(AuthContext);
 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from "../features/auth/AuthContext";
 import { useNavigate } from 'react-router-dom';
 
@@ -6,15 +6,24 @@ const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const { login } = useAuth();
+    const { login, user } = useAuth();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (user && user.role) {
+            if (user.role === 'doctor') {
+                navigate('/doctor/dashboard');
+            } else if (user.role === 'receptionist') {
+                navigate('/reception/dashboard');
+            }
+        }
+    }, [user, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             setError("");
             await login(email, password);
-            navigate("/dashboard");
         } catch (err) {
             setError("Failed to login: " + err.message);
         }

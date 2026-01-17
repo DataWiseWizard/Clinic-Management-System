@@ -1,147 +1,97 @@
-import { useState, useEffect } from "react";
-import {
-    collection,
-    query,
-    where,
-    onSnapshot,
-    runTransaction,
-    doc,
-    deleteDoc,
-    getDocs,
-    addDoc,
-    serverTimestamp
-} from "firebase/firestore";
+import { useEffect, useState } from "react";
 import { db } from "../../lib/firebase";
+import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp, runTransaction } from "firebase/firestore";
+import { addToQueue } from "../../features/queue/queueService";
+import { FaUserClock, FaCheck, FaTimes } from "react-icons/fa";
 
-const IncomingRequests = ({ onSuccess}) => {
+export default function IncomingRequests() {
     const [requests, setRequests] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [processing, setProcessing] = useState(null);
 
     useEffect(() => {
-        const q = query(
-            collection(db, "appointments"),
-            where("status", "==", "request")
-        );
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const pendingData = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setRequests(pendingData);
+        const q = query(collection(db, "incoming_requests"), where("status", "==", "pending"));
+        const unsub = onSnapshot(q, (snapshot) => {
+            setRequests(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         });
-
-        return () => unsubscribe();
+        return () => unsub();
     }, []);
 
-    const generateKeywords = (name) => {
-        const words = name.toLowerCase().split(" ");
-        const keywords = [];
-        words.forEach(word => {
-            let temp = "";
-            for (const char of word) {
-                temp += char;
-                keywords.push(temp);
-            }
-        });
-        return keywords;
-    };
-
-    const handleApprove = async (request) => {
-        if (loading) return;
-        setLoading(true);
-
+    const handleApprove = async (req) => {
+        setProcessing(req.id);
         try {
-            const patientsRef = collection(db, "patients");
-            const patientQuery = query(patientsRef, where("contact", "==", request.patientPhone));
-            const patientSnapshot = await getDocs(patientQuery);
-
-            if (patientSnapshot.empty) {
-                await addDoc(patientsRef, {
-                    fullName: request.patientName,
-                    contact: request.patientPhone,
-                    createdAt: serverTimestamp(),
-                    searchKeywords: generateKeywords(request.patientName),
-                    medicalHistory: [],
-                    lastVisit: new Date()
+            await runTransaction(db, async (req) => {
+                const patientRef = doc(collection(db, "patients"),
+                    {
+                        fullName: req.fullName,
+                        contact: req.contact,
+                        createdAt: serverTimestamp()
+                    });
+                const queueItem = await addToQueue(patientRef.id, {
+                    fullName: req.fullName,
+                    purpose: req.purpose
                 });
-                if (onSuccess) onSuccess();
-            }
 
-
-            await runTransaction(db, async (transaction) => {
-                const todayStr = new Date().toISOString().split('T')[0];
-                const statsRef = doc(db, "stats", todayStr);
-                const statsDoc = await transaction.get(statsRef);
-
-                let newTokenNumber = 1;
-
-                if (!statsDoc.exists()) {
-                    transaction.set(statsRef, { lastTokenNumber: 1 });
-                } else {
-                    newTokenNumber = statsDoc.data().lastTokenNumber + 1;
-                    transaction.update(statsRef, { lastTokenNumber: newTokenNumber });
-                }
-
-                const appointmentRef = doc(db, "appointments", request.id);
-                transaction.update(appointmentRef, {
-                    status: "waiting",
-                    tokenNumber: newTokenNumber,
-                    approvedAt: new Date()
+                const reqRef = doc(db, "incoming_requests", req.id);
+                await updateDoc(reqRef, {
+                    status: "approved",
+                    token: queueItem.token,
+                    queueId: queueItem.id,
+                    patientId: patientRef.id
                 });
             });
         } catch (error) {
-            console.error("Transaction failed: ", error);
-            alert("Error approving patient. Please try again.");
+            alert("Approval Failed: " + error.message);
         } finally {
-            setLoading(false);
+            setProcessing(null);
         }
     };
 
     const handleReject = async (id) => {
-        if (!window.confirm("Reject this request?")) return;
-        await deleteDoc(doc(db, "appointments", id));
+        if (!confirm("Reject this request?")) return;
+        await updateDoc(doc(db, "incoming_requests", id), { status: "rejected" });
     };
 
     if (requests.length === 0) return null;
 
     return (
-        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 animate-pulse-slow">
-            <h3 className="text-lg font-bold text-yellow-800 mb-3 flex items-center">
-                <span className="mr-2">🔔</span> Incoming Requests ({requests.length})
-            </h3>
+        <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-xl p-1 shadow-lg mb-6">
+            <div className="bg-white rounded-lg p-4">
+                <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                        <FaUserClock className="text-indigo-600" />
+                        Incoming Kiosk Requests
+                        <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full animate-bounce">
+                            {requests.length} New
+                        </span>
+                    </h3>
+                </div>
 
-            <div className="space-y-3">
-                {requests.map((req) => (
-                    <div key={req.id} className="flex items-center justify-between bg-white p-3 rounded shadow-sm">
-                        <div>
-                            <p className="font-semibold text-gray-800">{req.patientName}</p>
-                            <p className="text-sm text-gray-500">{req.patientPhone}</p>
-                            {req.symptoms && (
-                                <p className="text-xs text-red-500 mt-1">Sx: {req.symptoms}</p>
-                            )}
+                <div className="space-y-3">
+                    {requests.map(req => (
+                        <div key={req.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-md border border-gray-100">
+                            <div>
+                                <p className="font-bold text-gray-800">{req.fullName}</p>
+                                <p className="text-xs text-gray-500">{req.purpose} • {req.contact}</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => handleReject(req.id)}
+                                    className="p-2 text-red-500 hover:bg-red-50 rounded-full transition"
+                                >
+                                    <FaTimes />
+                                </button>
+                                <button
+                                    onClick={() => handleApprove(req)}
+                                    disabled={processing === req.id}
+                                    className="px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-md hover:bg-indigo-700 shadow-sm flex items-center gap-2 transition disabled:opacity-50"
+                                >
+                                    {processing === req.id ? "..." : <><FaCheck /> Accept</>}
+                                </button>
+                            </div>
                         </div>
-
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => handleReject(req.id)}
-                                className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
-                            >
-                                Reject
-                            </button>
-                            <button
-                                onClick={() => handleApprove(req)}
-                                disabled={loading}
-                                className="px-4 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 shadow-sm"
-                            >
-                                Accept
-                            </button>
-                        </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
         </div>
     );
-};
-
-export default IncomingRequests;
+}

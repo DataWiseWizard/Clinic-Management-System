@@ -1,5 +1,5 @@
 import { db } from "../../lib/firebase";
-import { 
+import {
   collection, 
   query, 
   where, 
@@ -7,7 +7,8 @@ import {
   onSnapshot, 
   doc, 
   updateDoc, 
-  serverTimestamp 
+  serverTimestamp,
+  limit
 } from "firebase/firestore";
 
 export const subscribeToBilling = (callback) => {
@@ -27,9 +28,27 @@ export const subscribeToBilling = (callback) => {
   });
 };
 
+export const subscribeToRecentPayments = (callback) => {
+  const q = query(
+    collection(db, "appointments"),
+    where("status", "==", "completed"),
+    where("billing.paymentStatus", "==", "paid"),
+    orderBy("timestamps.paymentTime", "desc"),
+    limit(10)
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    callback(data);
+  });
+};
+
 export const processPayment = async (appointmentId) => {
   const ref = doc(db, "appointments", appointmentId);
-  
+
   await updateDoc(ref, {
     status: "completed",
     "billing.paymentStatus": "paid",
