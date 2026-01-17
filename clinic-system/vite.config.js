@@ -36,6 +36,11 @@ export default defineConfig({
   define: {
     global: 'window',
   },
+  resolve: {
+    alias: {
+      '@react-pdf/renderer': '@react-pdf/renderer/lib/react-pdf.browser.es.js',
+    },
+  },
   build: {
     rollupOptions: {
       output: {

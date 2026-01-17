@@ -26,18 +26,14 @@ export default function IncomingRequests() {
     }, []);
 
     const handleApprove = async (req) => {
-        console.log("Starting approval for:", req);
         setProcessing(req.id);
 
         try {
-            console.log("Step 1: Creating Patient Record...");
             const patientRef = await addDoc(collection(db, "patients"), {
                 fullName: req.fullName,
                 contact: req.contact,
                 createdAt: serverTimestamp()
             });
-            console.log("Patient Created. ID:", patientRef.id);
-            console.log("Step 2: Adding to Queue...");
             const queueItem = await addToQueue(patientRef.id, {
                 fullName: req.fullName,
                 purpose: req.purpose
@@ -46,8 +42,6 @@ export default function IncomingRequests() {
             if (!queueItem || !queueItem.token) {
                 throw new Error("Queue Service did not return a token!");
             }
-            console.log("Queue Item Created. Token:", queueItem.token);
-            console.log("Step 3: Updating Request Status...");
 
             const reqRef = doc(db, "incoming_requests", req.id);
             await updateDoc(reqRef, {
@@ -56,7 +50,6 @@ export default function IncomingRequests() {
                 queueId: queueItem.id,
                 patientId: patientRef.id
             });
-            console.log("Success! Request Approved.");
         } catch (error) {
             console.error("APPROVAL FAILED:", error);
             alert("Approval Failed: " + error.message);
