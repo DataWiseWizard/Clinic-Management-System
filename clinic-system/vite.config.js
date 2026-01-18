@@ -42,7 +42,9 @@ export default defineConfig({
         manualChunks(id) {
           if (id.includes('node_modules')) {
             if (id.includes('firebase')) return 'firebase';
-            if (id.includes('@react-pdf') || id.includes('react-pdf')) return 'pdf-renderer';
+            if (id.includes('@react-pdf') || id.includes('react-pdf')) {
+              return 'pdf-renderer';
+            }
             return 'vendor';
           }
         }
