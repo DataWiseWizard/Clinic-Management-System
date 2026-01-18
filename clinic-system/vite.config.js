@@ -9,6 +9,10 @@ export default defineConfig({
   VitePWA({
     registerType: 'autoUpdate',
     includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+    workbox: {
+      maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+      globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+    },
     manifest: {
       name: 'CMS Portal',
       short_name: 'CMS',
@@ -25,11 +29,7 @@ export default defineConfig({
           sizes: '512x512',
           type: 'image/png'
         }
-      ],
-      workbox: {
-        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
-      }
+      ]
     }
   })
   ],

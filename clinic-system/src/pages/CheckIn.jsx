@@ -15,6 +15,8 @@ export default function CheckIn() {
   const [queueData, setQueueData] = useState(null);
   const [peopleAhead, setPeopleAhead] = useState(0);
 
+  const queueUnsubRef = useRef(null);
+
   useEffect(() => {
     if (!requestId) return;
 
@@ -23,27 +25,40 @@ export default function CheckIn() {
         const data = docSnap.data();
         if (data.status === "approved" && data.queueId) {
           setStatus("approved");
-          watchQueueItem(data.queueId);
+          if (!queueUnsubRef.current) {
+            watchQueueItem(data.queueId);
+          }
         }
       }
     });
-    return () => unsub();
+    return () => {
+      unsub();
+      if (queueUnsubRef.current) {
+        queueUnsubRef.current();
+      }
+    };
   }, [requestId]);
 
   const watchQueueItem = (queueId) => {
-    onSnapshot(doc(db, "queue", queueId), async (docSnap) => {
+    queueUnsubRef.current = onSnapshot(doc(db, "queue", queueId), async (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setQueueData(data);
 
         if (data.status === 'waiting') {
-          const ahead = await getPeopleAhead(data.token);
-          setPeopleAhead(ahead);
+          try {
+            const ahead = await getPeopleAhead(data.token);
+            setPeopleAhead(ahead);
+          } catch (error) {
+            console.error("Error fetching people ahead:", error);
+          }
         }
         if (data.status === 'in_progress') {
           triggerAlert();
         }
       }
+    }, (error) => {
+      console.error("Error watching queue item:", error);
     });
   };
 
