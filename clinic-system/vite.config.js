@@ -27,7 +27,7 @@ export default defineConfig({
         }
       ],
       workbox: {
-        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,ico,png,svg}']
       }
     }
@@ -41,15 +41,13 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('firebase')) return 'firebase';
-            if (id.includes('@react-pdf') || id.includes('react-pdf')) {
-              return 'pdf-renderer';
+            if (id.includes('firebase')) {
+              return 'firebase';
             }
             return 'vendor';
           }
         }
       }
     },
-    chunkSizeWarningLimit: 1500
   }
 })
