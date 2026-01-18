@@ -13,7 +13,7 @@ import {
 import { addToQueue } from "../../features/queue/queueService";
 import { FaUserClock, FaCheck, FaTimes } from "react-icons/fa";
 
-export default function IncomingRequests() {
+export default function IncomingRequests({ onPatientAdded }) {
     const [requests, setRequests] = useState([]);
     const [processing, setProcessing] = useState(null);
 

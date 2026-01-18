@@ -13,9 +13,9 @@ import {
 export const getPatientHistory = async (patientId) => {
     try {
         const q = query(
-            collection(db, "appointments"),
+            collection(db, "queue"),
             where("patientId", "==", patientId),
-            orderBy("timestamps.created", "desc")
+            orderBy("timestamp", "desc")
         );
 
         const snapshot = await getDocs(q);
@@ -23,10 +23,8 @@ export const getPatientHistory = async (patientId) => {
 
         const history = rawData.filter(apt => {
             const isRelevant = apt.status === "completed" || apt.status === "billing";
-            console.log(`Checking Apt ${apt.id}: Status is '${apt.status}' -> Keep? ${isRelevant}`);
             return isRelevant;
         });
-        history.sort((a, b) => b.timestamps.created - a.timestamps.created);
         return history;
     } catch (error) {
         console.error("Error fetching history:", error);
@@ -35,7 +33,7 @@ export const getPatientHistory = async (patientId) => {
 };
 
 export const startConsultation = async (appointmentId) => {
-    const ref = doc(db, "appointments", appointmentId);
+    const ref = doc(db, "queue", appointmentId);
     try {
         await Promise.race([
             updateDoc(ref, {
@@ -51,15 +49,18 @@ export const startConsultation = async (appointmentId) => {
 };
 
 export const finishConsultation = async (appointmentId, clinicalData, billingAmount) => {
-    const ref = doc(db, "appointments", appointmentId);
+    const ref = doc(db, "queue", appointmentId);
     try {
         await Promise.race([
             updateDoc(ref, {
                 status: "billing",
                 "timestamps.completed": serverTimestamp(),
                 clinicalData: clinicalData,
-                "billing.consultationFee": billingAmount,
-                "billing.paymentStatus": "pending"
+                billing: {
+                    consultationFee: billingAmount,
+                    paymentStatus: "pending",
+                    total: billingAmount
+                }
             }),
             new Promise((_, reject) => setTimeout(() => reject(new Error("Write Timeout")), 500))
         ]);

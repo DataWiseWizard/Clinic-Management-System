@@ -13,7 +13,7 @@ import {
 
 export const subscribeToBilling = (callback) => {
   const q = query(
-    collection(db, "appointments"),
+    collection(db, "queue"),
     where("status", "==", "billing"),
     where("billing.paymentStatus", "==", "pending"),
     orderBy("timestamps.completed", "asc")
@@ -30,7 +30,7 @@ export const subscribeToBilling = (callback) => {
 
 export const subscribeToRecentPayments = (callback) => {
   const q = query(
-    collection(db, "appointments"),
+    collection(db, "queue"),
     where("status", "==", "completed"),
     where("billing.paymentStatus", "==", "paid"),
     orderBy("timestamps.paymentTime", "desc"),
@@ -47,7 +47,7 @@ export const subscribeToRecentPayments = (callback) => {
 };
 
 export const processPayment = async (appointmentId) => {
-  const ref = doc(db, "appointments", appointmentId);
+  const ref = doc(db, "queue", appointmentId);
 
   await updateDoc(ref, {
     status: "completed",

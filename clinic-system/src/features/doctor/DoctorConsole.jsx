@@ -92,7 +92,9 @@ export default function DoctorConsole() {
 
                                 {history.map(record => (
                                     <div key={record.id} className="mb-4 p-3 bg-gray-50 rounded text-sm">
-                                        <div className="font-bold text-gray-800">{record.timestamps.created?.toDate().toLocaleDateString()}</div>
+                                        <div className="font-bold text-gray-800">
+                                            {record.timestamp?.toDate().toLocaleDateString() || record.timestamps?.created?.toDate().toLocaleDateString() || "Date N/A"}
+                                        </div>
                                         <div className="text-gray-600 mt-1"><span className="font-medium">Dx:</span> {record.clinicalData?.diagnosis}</div>
                                         <div className="text-gray-500 mt-1 italic">"{record.clinicalData?.prescription}"</div>
                                     </div>
