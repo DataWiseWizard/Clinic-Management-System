@@ -72,41 +72,39 @@ export const getPeopleAhead = async (myToken) => {
  * @param {function} callback - Function to update React state
  */
 export const subscribeToQueue = (callback) => {
-    const todayStr = getTodayStr();
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
     const q = query(
-        collection(db, "appointments"),
-        where("date", "==", todayStr),
+        collection(db, "queue"),
         where("status", "==", "waiting"),
-        orderBy("tokenNumber", "asc")
+        where("timestamp", ">=", startOfDay),
+        orderBy("timestamp", "asc")
     );
 
     return onSnapshot(q, (snapshot) => {
         const queue = snapshot.docs.map(doc => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
+            tokenNumber: doc.data().token
         }));
         callback(queue);
     });
 };
 
 export const getQueueHistory = async () => {
-    const todayStr = new Date().toISOString().split("T")[0];
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
     const q = query(
-        collection(db, "appointments"),
-        where("date", "==", todayStr),
-        where("status", "==", "completed")
+        collection(db, "queue"),
+        where("status", "==", "completed"),
+        where("timestamp", ">=", startOfDay)
     );
 
     try {
         const snapshot = await getDocs(q);
         const rawData = snapshot.docs.map(doc => doc.data());
-        const sortedHistory = rawData.sort((a, b) => {
-            const timeA = a.timestamps?.completed?.toMillis() || 0;
-            const timeB = b.timestamps?.completed?.toMillis() || 0;
-            return timeB - timeA;
-        })
-
-        return sortedHistory.slice(0, 10);
+        
+        return rawData;
 
     } catch (error) {
         console.warn("Analytics fetch failed:", error);

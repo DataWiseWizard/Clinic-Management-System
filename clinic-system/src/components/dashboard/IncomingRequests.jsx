@@ -50,6 +50,8 @@ export default function IncomingRequests() {
                 queueId: queueItem.id,
                 patientId: patientRef.id
             });
+
+            if (onPatientAdded) onPatientAdded();
         } catch (error) {
             console.error("APPROVAL FAILED:", error);
             alert("Approval Failed: " + error.message);

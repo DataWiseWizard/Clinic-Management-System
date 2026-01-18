@@ -1,16 +1,18 @@
+import { useState } from "react";
 import QueueList from "../../features/queue/QueueList";
 import PatientList from "../../features/patients/PatientList"
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import IncomingRequests from "../../components/dashboard/IncomingRequests";
 
 export default function ReceptionDashboard() {
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   return (
     <DashboardLayout role="receptionist">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Front Desk</h1>
         <p className="text-gray-500">Manage patient check-ins and queue status.</p>
       </div>
-      <IncomingRequests />
+      <IncomingRequests onPatientAdded={() => setRefreshTrigger(prev => prev + 1)} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-140px)]">
         <div className="flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -19,7 +21,7 @@ export default function ReceptionDashboard() {
             <p className="text-xs text-blue-600">Search existing patients to check them in.</p>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
-            <PatientList />
+            <PatientList refreshTrigger={refreshTrigger}/>
           </div>
         </div>
         <div className="flex flex-col bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
