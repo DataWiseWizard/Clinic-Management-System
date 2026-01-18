@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { db } from "../lib/firebase";
 import { collection, addDoc, onSnapshot, doc, serverTimestamp } from "firebase/firestore";
 import { getPeopleAhead } from "../features/queue/queueService";
