@@ -115,6 +115,29 @@ This project moves beyond basic CRUD operations to demonstrate advanced engineer
 * **Inventory Management:** Tracking medicine stock levels in real-time.
 * **Cloud Functions:** Automated SMS/Email notifications upon registration (Serverless triggers).
 
+## 🩺 User Guide & Workflow
+
+**Step 1: Patient Check-In (Kiosk Mode)**
+* Open `/check-in`.
+* Patient enters details.
+* System creates a "Pending Request" (to prevent spam).
+
+**Step 2: Receptionist Approval**
+* Login as Receptionist.
+* Go to Dashboard.
+* Approve the pending patient. The system assigns a **Token Number**.
+
+**Step 3: Consultation**
+* Login as Doctor.
+* Click "Call In" on the next patient in the Live Queue.
+* Enter Diagnosis/Prescription and click "Finish".
+* Patient is automatically moved to the Billing Queue.
+
+**Step 4: Billing & Exit**
+* Receptionist sees "Payment Pending" alert.
+* Collects cash/card and clicks "Process Payment".
+* System generates a downloadable PDF Invoice.
+
 ---
 
 **Developed by Rudraksha Kumbhkar**
